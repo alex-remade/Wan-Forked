@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 
 try:
     from sageattention import sageattn
-    @torch.compiler.disable()
+    #@torch.compiler.disable()
     def sageattn_func(q, k, v, attn_mask=None, dropout_p=0, is_causal=False):
         return sageattn(q, k, v, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=is_causal)
 except Exception as e:
