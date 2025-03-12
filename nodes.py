@@ -36,7 +36,7 @@ def add_noise_to_reference_video(image, ratio=None):
     image = image + image_noise
     return image
 
-class WanVideoBlockSwap:
+class ForkWanVideoBlockSwap:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -49,13 +49,13 @@ class WanVideoBlockSwap:
     RETURN_TYPES = ("BLOCKSWAPARGS",)
     RETURN_NAMES = ("block_swap_args",)
     FUNCTION = "setargs"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Settings for block swapping, reduces VRAM use by swapping blocks to CPU memory"
 
     def setargs(self, **kwargs):
         return (kwargs, )
 
-class WanVideoVRAMManagement:
+class ForkWanVideoVRAMManagement:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -66,13 +66,13 @@ class WanVideoVRAMManagement:
     RETURN_TYPES = ("VRAM_MANAGEMENTARGS",)
     RETURN_NAMES = ("vram_management_args",)
     FUNCTION = "setargs"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Alternative offloading method from DiffSynth-Studio, more aggressive in reducing memory use than block swapping, but can be slower"
 
     def setargs(self, **kwargs):
         return (kwargs, )
 
-class WanVideoTeaCache:
+class ForkWanVideoTeaCache:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -88,7 +88,7 @@ class WanVideoTeaCache:
     RETURN_TYPES = ("TEACACHEARGS",)
     RETURN_NAMES = ("teacache_args",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = """
 Patch WanVideo model to use TeaCache. Speeds up inference by caching the output and  
 applying it instead of doing the step.  Best results are achieved by choosing the  
@@ -128,7 +128,7 @@ Official recommended values https://github.com/ali-vilab/TeaCache/tree/main/TeaC
         return (teacache_args,)
 
 
-class WanVideoModel(comfy.model_base.BaseModel):
+class ForkWanVideoModel(comfy.model_base.BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pipeline = {}
@@ -147,7 +147,7 @@ except: #for backwards compatibility
     from comfy.latent_formats import HunyuanVideo
     latent_format = HunyuanVideo
 
-class WanVideoModelConfig:
+class ForkWanVideoModelConfig:
     def __init__(self, dtype):
         self.unet_config = {}
         self.unet_extra_config = {}
@@ -205,7 +205,7 @@ def standardize_lora_key_format(lora_sd):
         new_sd[k] = v
     return new_sd
 
-class WanVideoEnhanceAVideo:
+class ForkWanVideoEnhanceAVideo:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -218,13 +218,13 @@ class WanVideoEnhanceAVideo:
     RETURN_TYPES = ("FETAARGS",)
     RETURN_NAMES = ("feta_args",)
     FUNCTION = "setargs"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "https://github.com/NUS-HPC-AI-Lab/Enhance-A-Video"
 
     def setargs(self, **kwargs):
         return (kwargs, )
 
-class WanVideoLoraSelect:
+class ForkWanVideoLoraSelect:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -242,7 +242,7 @@ class WanVideoLoraSelect:
     RETURN_TYPES = ("WANVIDLORA",)
     RETURN_NAMES = ("lora", )
     FUNCTION = "getlorapath"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Select a LoRA model from ComfyUI/models/loras"
 
     def getlorapath(self, lora, strength, blocks=None, prev_lora=None, fuse_lora=False):
@@ -260,7 +260,7 @@ class WanVideoLoraSelect:
         loras_list.append(lora)
         return (loras_list,)
 
-class WanVideoLoraBlockEdit:
+class ForkWanVideoLoraBlockEdit:
     def __init__(self):
         self.loaded_lora = None
 
@@ -279,7 +279,7 @@ class WanVideoLoraBlockEdit:
     OUTPUT_TOOLTIPS = ("The modified lora model",)
     FUNCTION = "select"
 
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def select(self, **kwargs):
         selected_blocks = {k: v for k, v in kwargs.items() if v is True and isinstance(v, bool)}
@@ -287,7 +287,7 @@ class WanVideoLoraBlockEdit:
         return (selected_blocks,)
 
 #region Model loading
-class WanVideoModelLoader:
+class ForkWanVideoModelLoader:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -317,7 +317,7 @@ class WanVideoModelLoader:
     RETURN_TYPES = ("WANVIDEOMODEL",)
     RETURN_NAMES = ("model", )
     FUNCTION = "loadmodel"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def loadmodel(self, model, base_precision, load_device,  quantization,
                   compile_args=None, attention_mode="sdpa", block_swap_args=None, lora=None, vram_management_args=None):
@@ -328,6 +328,7 @@ class WanVideoModelLoader:
         mm.soft_empty_cache()
         manual_offloading = True
         if "sage" in attention_mode:
+            print("SageAttention in attention mode")
             try:
                 from sageattention import sageattn
             except Exception as e:
@@ -408,8 +409,8 @@ class WanVideoModelLoader:
             transformer = WanModel(**TRANSFORMER_CONFIG)
         transformer.eval()
 
-        comfy_model = WanVideoModel(
-            WanVideoModelConfig(base_dtype),
+        comfy_model = ForkWanVideoModel(
+            ForkWanVideoModelConfig(base_dtype),
             model_type=comfy.model_base.ModelType.FLOW,
             device=device,
         )
@@ -619,7 +620,7 @@ class WanVideoModelLoader:
 
 #region load VAE
 
-class WanVideoVAELoader:
+class ForkWanVideoVAELoader:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -636,7 +637,7 @@ class WanVideoVAELoader:
     RETURN_TYPES = ("WANVAE",)
     RETURN_NAMES = ("vae", )
     FUNCTION = "loadmodel"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Loads Hunyuan VAE model from 'ComfyUI/models/vae'"
 
     def loadmodel(self, model_name, precision):
@@ -665,7 +666,7 @@ class WanVideoVAELoader:
 
 
 
-class WanVideoTorchCompileSettings:
+class ForkWanVideoTorchCompileSettings:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -682,7 +683,7 @@ class WanVideoTorchCompileSettings:
     RETURN_TYPES = ("WANCOMPILEARGS",)
     RETURN_NAMES = ("torch_compile_args",)
     FUNCTION = "set_args"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "torch.compile settings, when connected to the model loader, torch.compile of the selected layers is attempted. Requires Triton and torch 2.5.0 is recommended"
 
     def set_args(self, backend, fullgraph, mode, dynamic, dynamo_cache_size_limit, compile_transformer_blocks_only):
@@ -700,7 +701,7 @@ class WanVideoTorchCompileSettings:
 
 #region TextEncode
 
-class LoadWanVideoT5TextEncoder:
+class ForkLoadWanVideoT5TextEncoder:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -719,7 +720,7 @@ class LoadWanVideoT5TextEncoder:
     RETURN_TYPES = ("WANTEXTENCODER",)
     RETURN_NAMES = ("wan_t5_model", )
     FUNCTION = "loadmodel"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Loads Hunyuan text_encoder model from 'ComfyUI/models/LLM'"
 
     def loadmodel(self, model_name, precision, load_device="offload_device", quantization="disabled"):
@@ -751,7 +752,7 @@ class LoadWanVideoT5TextEncoder:
         
         return (text_encoder,)
     
-class LoadWanVideoClipTextEncoder:
+class ForkLoadWanVideoClipTextEncoder:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -769,7 +770,7 @@ class LoadWanVideoClipTextEncoder:
     RETURN_TYPES = ("CLIP_VISION",) 
     RETURN_NAMES = ("wan_clip_vision", )
     FUNCTION = "loadmodel"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Loads Hunyuan text_encoder model from 'ComfyUI/models/text_encoders'"
 
     def loadmodel(self, model_name, precision, load_device="offload_device"):
@@ -790,7 +791,7 @@ class LoadWanVideoClipTextEncoder:
         return (clip_model,)
     
 
-class WanVideoTextEncode:
+class ForkWanVideoTextEncode:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -807,7 +808,7 @@ class WanVideoTextEncode:
     RETURN_TYPES = ("WANVIDEOTEXTEMBEDS", )
     RETURN_NAMES = ("text_embeds",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Encodes text prompts into text embeddings. For context windowing you can input multiple prompts separated by '|'"
 
     def process(self, t5, positive_prompt, negative_prompt,force_offload=True, model_to_offload=None):
@@ -847,7 +848,7 @@ class WanVideoTextEncode:
             }
         return (prompt_embeds_dict,)
     
-class WanVideoTextEmbedBridge:
+class ForkWanVideoTextEmbedBridge:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -859,7 +860,7 @@ class WanVideoTextEmbedBridge:
     RETURN_TYPES = ("WANVIDEOTEXTEMBEDS", )
     RETURN_NAMES = ("text_embeds",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Bridge between ComfyUI native text embedding and WanVideoWrapper text embedding"
 
     def process(self, positive, negative):
@@ -871,7 +872,7 @@ class WanVideoTextEmbedBridge:
         return (prompt_embeds_dict,)
     
 #region clip image encode
-class WanVideoImageClipEncode:
+class ForkWanVideoImageClipEncode:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -895,7 +896,7 @@ class WanVideoImageClipEncode:
     RETURN_TYPES = ("WANVIDIMAGE_EMBEDS", )
     RETURN_NAMES = ("image_embeds",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def process(self, clip_vision, vae, image, num_frames, generation_width, generation_height, force_offload=True, noise_aug_strength=0.0, 
                 latent_strength=1.0, clip_embed_strength=1.0, adjust_resolution=True):
@@ -997,7 +998,7 @@ class WanVideoImageClipEncode:
 
         return (image_embeds,)
     
-class WanVideoEmptyEmbeds:
+class ForkWanVideoEmptyEmbeds:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -1010,7 +1011,7 @@ class WanVideoEmptyEmbeds:
     RETURN_TYPES = ("WANVIDIMAGE_EMBEDS", )
     RETURN_NAMES = ("image_embeds",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def process(self, num_frames, width, height):
 
@@ -1033,7 +1034,7 @@ class WanVideoEmptyEmbeds:
     
         return (embeds,)
     
-class WanVideoControlEmbeds:
+class ForkWanVideoControlEmbeds:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -1046,7 +1047,7 @@ class WanVideoControlEmbeds:
     RETURN_TYPES = ("WANVIDIMAGE_EMBEDS", )
     RETURN_NAMES = ("image_embeds",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def process(self, latents, start_percent, end_percent):
 
@@ -1070,7 +1071,7 @@ class WanVideoControlEmbeds:
 
 #region Sampler
 
-class WanVideoContextOptions:
+class ForkWanVideoContextOptions:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -1086,7 +1087,7 @@ class WanVideoContextOptions:
     RETURN_TYPES = ("WANVIDCONTEXT", )
     RETURN_NAMES = ("context_options",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Context options for WanVideo, allows splitting the video into context windows and attemps blending them for longer generations than the model and memory otherwise would allow."
 
     def process(self, context_schedule, context_frames, context_stride, context_overlap, freenoise, verbose):
@@ -1101,7 +1102,7 @@ class WanVideoContextOptions:
 
         return (context_options,)
     
-class WanVideoFlowEdit:
+class ForkWanVideoFlowEdit:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -1120,13 +1121,13 @@ class WanVideoFlowEdit:
     RETURN_TYPES = ("FLOWEDITARGS", )
     RETURN_NAMES = ("flowedit_args",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
     DESCRIPTION = "Flowedit options for WanVideo"
 
     def process(self, **kwargs):
         return (kwargs,)
     
-class WanVideoSampler:
+class ForkWanVideoSampler:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -1160,7 +1161,7 @@ class WanVideoSampler:
     RETURN_TYPES = ("LATENT", )
     RETURN_NAMES = ("samples",)
     FUNCTION = "process"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def process(self, model, text_embeds, image_embeds, shift, steps, cfg, seed, scheduler, riflex_freq_index, 
         force_offload=True, samples=None, feta_args=None, denoise_strength=1.0, context_options=None, 
@@ -1804,7 +1805,7 @@ class WindowTracker:
         return self.teacache_states[window_id]
 
 #region VideoDecode
-class WanVideoDecode:
+class ForkWanVideoDecode:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -1821,7 +1822,7 @@ class WanVideoDecode:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("images",)
     FUNCTION = "decode"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def decode(self, vae, samples, enable_vae_tiling, tile_x, tile_y, tile_stride_x, tile_stride_y):
         device = mm.get_torch_device()
@@ -1848,7 +1849,7 @@ class WanVideoDecode:
         return (image,)
 
 #region VideoEncode
-class WanVideoEncode:
+class ForkWanVideoEncode:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -1870,7 +1871,7 @@ class WanVideoEncode:
     RETURN_TYPES = ("LATENT",)
     RETURN_NAMES = ("samples",)
     FUNCTION = "encode"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def encode(self, vae, image, enable_vae_tiling, tile_x, tile_y, tile_stride_x, tile_stride_y, noise_aug_strength=0.0, latent_strength=1.0, mask=None):
         device = mm.get_torch_device()
@@ -1918,7 +1919,7 @@ class WanVideoEncode:
 
         return ({"samples": latents, "mask": mask},)
 
-class WanVideoLatentPreview:
+class ForkWanVideoLatentPreview:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -1936,7 +1937,7 @@ class WanVideoLatentPreview:
     RETURN_TYPES = ("IMAGE", "STRING", )
     RETURN_NAMES = ("images", "latent_rgb_factors",)
     FUNCTION = "sample"
-    CATEGORY = "WanVideoWrapper"
+    CATEGORY = "ForkWanVideoWrapper"
 
     def sample(self, samples, seed, min_val, max_val, r_bias, g_bias, b_bias):
         mm.soft_empty_cache()
@@ -1998,51 +1999,51 @@ class WanVideoLatentPreview:
         return (latent_images.float().cpu(), out_factors)
 
 NODE_CLASS_MAPPINGS = {
-    "WanVideoSampler": WanVideoSampler,
-    "WanVideoDecode": WanVideoDecode,
-    "WanVideoTextEncode": WanVideoTextEncode,
-    "WanVideoModelLoader": WanVideoModelLoader,
-    "WanVideoVAELoader": WanVideoVAELoader,
-    "LoadWanVideoT5TextEncoder": LoadWanVideoT5TextEncoder,
-    "WanVideoImageClipEncode": WanVideoImageClipEncode,
-    "LoadWanVideoClipTextEncoder": LoadWanVideoClipTextEncoder,
-    "WanVideoEncode": WanVideoEncode,
-    "WanVideoBlockSwap": WanVideoBlockSwap,
-    "WanVideoTorchCompileSettings": WanVideoTorchCompileSettings,
-    "WanVideoLatentPreview": WanVideoLatentPreview,
-    "WanVideoEmptyEmbeds": WanVideoEmptyEmbeds,
-    "WanVideoLoraSelect": WanVideoLoraSelect,
-    "WanVideoLoraBlockEdit": WanVideoLoraBlockEdit,
-    "WanVideoEnhanceAVideo": WanVideoEnhanceAVideo,
-    "WanVideoContextOptions": WanVideoContextOptions,
-    "WanVideoTeaCache": WanVideoTeaCache,
-    "WanVideoVRAMManagement": WanVideoVRAMManagement,
-    "WanVideoTextEmbedBridge": WanVideoTextEmbedBridge,
-    "WanVideoFlowEdit": WanVideoFlowEdit,
-    "WanVideoControlEmbeds": WanVideoControlEmbeds,
-    }
+    "ForkWanVideoSampler": ForkWanVideoSampler,
+    "ForkWanVideoDecode": ForkWanVideoDecode,
+    "ForkWanVideoTextEncode": ForkWanVideoTextEncode,
+    "ForkWanVideoModelLoader": ForkWanVideoModelLoader,
+    "ForkWanVideoVAELoader": ForkWanVideoVAELoader,
+    "ForkLoadWanVideoT5TextEncoder": ForkLoadWanVideoT5TextEncoder,
+    "ForkWanVideoImageClipEncode": ForkWanVideoImageClipEncode,
+    "ForkLoadWanVideoClipTextEncoder": ForkLoadWanVideoClipTextEncoder,
+    "ForkWanVideoEncode": ForkWanVideoEncode,
+    "ForkWanVideoBlockSwap": ForkWanVideoBlockSwap,
+    "ForkWanVideoTorchCompileSettings": ForkWanVideoTorchCompileSettings,
+    "ForkWanVideoLatentPreview": ForkWanVideoLatentPreview,
+    "ForkWanVideoEmptyEmbeds": ForkWanVideoEmptyEmbeds,
+    "ForkWanVideoLoraSelect": ForkWanVideoLoraSelect,
+    "ForkWanVideoLoraBlockEdit": ForkWanVideoLoraBlockEdit,
+    "ForkWanVideoEnhanceAVideo": ForkWanVideoEnhanceAVideo,
+    "ForkWanVideoContextOptions": ForkWanVideoContextOptions,
+    "ForkWanVideoTeaCache": ForkWanVideoTeaCache,
+    "ForkWanVideoVRAMManagement": ForkWanVideoVRAMManagement,
+    "ForkWanVideoTextEmbedBridge": ForkWanVideoTextEmbedBridge,
+    "ForkWanVideoFlowEdit": ForkWanVideoFlowEdit,
+    "ForkWanVideoControlEmbeds": ForkWanVideoControlEmbeds,
+}
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WanVideoSampler": "WanVideo Sampler",
-    "WanVideoDecode": "WanVideo Decode",
-    "WanVideoTextEncode": "WanVideo TextEncode",
-    "WanVideoTextImageEncode": "WanVideo TextImageEncode (IP2V)",
-    "WanVideoModelLoader": "WanVideo Model Loader",
-    "WanVideoVAELoader": "WanVideo VAE Loader",
-    "LoadWanVideoT5TextEncoder": "Load WanVideo T5 TextEncoder",
-    "WanVideoImageClipEncode": "WanVideo ImageClip Encode",
-    "LoadWanVideoClipTextEncoder": "Load WanVideo Clip Encoder",
-    "WanVideoEncode": "WanVideo Encode",
-    "WanVideoBlockSwap": "WanVideo BlockSwap",
-    "WanVideoTorchCompileSettings": "WanVideo Torch Compile Settings",
-    "WanVideoLatentPreview": "WanVideo Latent Preview",
-    "WanVideoEmptyEmbeds": "WanVideo Empty Embeds",
-    "WanVideoLoraSelect": "WanVideo Lora Select",
-    "WanVideoLoraBlockEdit": "WanVideo Lora Block Edit",
-    "WanVideoEnhanceAVideo": "WanVideo Enhance-A-Video",
-    "WanVideoContextOptions": "WanVideo Context Options",
-    "WanVideoTeaCache": "WanVideo TeaCache",
-    "WanVideoVRAMManagement": "WanVideo VRAM Management",
-    "WanVideoTextEmbedBridge": "WanVideo TextEmbed Bridge",
-    "WanVideoFlowEdit": "WanVideo FlowEdit",
-    "WanVideoControlEmbeds": "WanVideo Control Embeds",
-    }
+    "ForkWanVideoSampler": "ForkWanVideo Sampler",
+    "ForkWanVideoDecode": "ForkWanVideo Decode",
+    "ForkWanVideoTextEncode": "ForkWanVideo TextEncode",
+    "ForkWanVideoTextImageEncode": "ForkWanVideo TextImageEncode (IP2V)",
+    "ForkWanVideoModelLoader": "ForkWanVideo Model Loader",
+    "ForkWanVideoVAELoader": "ForkWanVideo VAE Loader",
+    "ForkLoadWanVideoT5TextEncoder": "ForkLoad WanVideo T5 TextEncoder",
+    "ForkWanVideoImageClipEncode": "ForkWanVideo ImageClip Encode",
+    "ForkLoadWanVideoClipTextEncoder": "ForkLoad WanVideo Clip Encoder",
+    "ForkWanVideoEncode": "ForkWanVideo Encode",
+    "ForkWanVideoBlockSwap": "ForkWanVideo BlockSwap",
+    "ForkWanVideoTorchCompileSettings": "ForkWanVideo Torch Compile Settings",
+    "ForkWanVideoLatentPreview": "ForkWanVideo Latent Preview",
+    "ForkWanVideoEmptyEmbeds": "ForkWanVideo Empty Embeds",
+    "ForkWanVideoLoraSelect": "ForkWanVideo Lora Select",
+    "ForkWanVideoLoraBlockEdit": "ForkWanVideo Lora Block Edit",
+    "ForkWanVideoEnhanceAVideo": "ForkWanVideo Enhance-A-Video",
+    "ForkWanVideoContextOptions": "ForkWanVideo Context Options",
+    "ForkWanVideoTeaCache": "ForkWanVideo TeaCache",
+    "ForkWanVideoVRAMManagement": "ForkWanVideo VRAM Management",
+    "ForkWanVideoTextEmbedBridge": "ForkWanVideo TextEmbed Bridge",
+    "ForkWanVideoFlowEdit": "ForkWanVideo FlowEdit",
+    "ForkWanVideoControlEmbeds": "ForkWanVideo Control Embeds",
+}

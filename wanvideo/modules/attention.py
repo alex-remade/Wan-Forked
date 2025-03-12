@@ -202,6 +202,8 @@ def attention(
 
         out = sageattn_func(
             q, k, v, attn_mask=attn_mask, is_causal=causal, dropout_p=dropout_p)
+        
+        print("SageAttention out shape: ", out.shape)
 
         out = out.transpose(1, 2).contiguous()
         return out
